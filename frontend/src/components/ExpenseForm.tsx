@@ -14,6 +14,7 @@ interface ExpenseFormProps {
   onCancel?: () => void;
   submitLabel?: string;
   categoriesList?: Array<{ id: number; name: string }>;
+  onAddCategoryClick?: () => void;
 }
 
 export function ExpenseForm({
@@ -22,6 +23,7 @@ export function ExpenseForm({
   onCancel,
   submitLabel = "Add Expense",
   categoriesList,
+  onAddCategoryClick,
 }: ExpenseFormProps) {
   const { formData, errors, isSubmitting, handleChange, handleSubmit } =
     useExpenseForm({
@@ -43,6 +45,9 @@ export function ExpenseForm({
   // Use parent-provided list if it has items, otherwise fall back to local database list
   const displayCategories = (categoriesList && categoriesList.length > 0) ? categoriesList : localCategories;
 
+  // Filter out "Other" category since custom categories are supported
+  const filteredCategories = displayCategories.filter((cat) => cat.name !== "Other");
+
   const formStyle: React.CSSProperties = {
     display: "flex",
     flexDirection: "column",
@@ -55,7 +60,7 @@ export function ExpenseForm({
     marginTop: "0.5rem",
   };
 
-  const categoryOptions = displayCategories.map((category) => ({
+  const categoryOptions = filteredCategories.map((category) => ({
     value: category.name,
     label: category.name,
   }));
@@ -85,15 +90,38 @@ export function ExpenseForm({
         required
       />
 
-      <SelectBox
-        label="Category"
-        options={categoryOptions}
-        value={formData.category}
-        onChange={(e) => handleChange("category", e.target.value)}
-        error={errors.category}
-        fullWidth
-        required
-      />
+      <div style={{ display: "flex", alignItems: "flex-end", gap: "8px" }}>
+        <div style={{ flex: 1 }}>
+          <SelectBox
+            label="Category"
+            options={categoryOptions}
+            value={formData.category}
+            onChange={(e) => handleChange("category", e.target.value)}
+            error={errors.category}
+            fullWidth
+            required
+          />
+        </div>
+        {onAddCategoryClick && (
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={onAddCategoryClick}
+            style={{
+              padding: "0 16px",
+              height: "42px",
+              marginBottom: errors.category ? "24px" : "0px",
+              fontSize: "1.2rem",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+            title="Add Custom Category"
+          >
+            +
+          </Button>
+        )}
+      </div>
 
       <TextField
         label="Date"

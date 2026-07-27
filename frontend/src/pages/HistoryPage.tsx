@@ -187,9 +187,6 @@ const HistoryPage: React.FC = () => {
           />
         </div>
         <div style={{ display: "flex", gap: "12px" }}>
-          <Button variant="secondary" onClick={() => setIsCategoryModalOpen(true)}>
-            Add Category
-          </Button>
           <Button variant="primary" onClick={() => setIsModalOpen(true)}>
             Add Expense
           </Button>
@@ -231,6 +228,7 @@ const HistoryPage: React.FC = () => {
           onSubmit={handleAddExpense}
           onCancel={() => setIsModalOpen(false)}
           categoriesList={categoriesList}
+          onAddCategoryClick={() => setIsCategoryModalOpen(true)}
         />
       </Modal>
 
