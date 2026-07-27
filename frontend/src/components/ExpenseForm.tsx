@@ -40,8 +40,8 @@ export function ExpenseForm({
     }
   }, [categoriesList]);
 
-  // Use parent-provided list if available, otherwise fall back to local database list
-  const displayCategories = categoriesList || localCategories;
+  // Use parent-provided list if it has items, otherwise fall back to local database list
+  const displayCategories = (categoriesList && categoriesList.length > 0) ? categoriesList : localCategories;
 
   const formStyle: React.CSSProperties = {
     display: "flex",
