@@ -54,6 +54,7 @@ services:
       - backend_gems:/usr/local/bundle
     command: >
       sh -c "
+        # Install gems and execute rails commands with bundle exec for Windows host compatibility
         bundle install &&
         bundle exec rails db:migrate &&
         bundle exec rails db:seed &&
