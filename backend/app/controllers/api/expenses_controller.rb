@@ -1,6 +1,6 @@
 class Api::ExpensesController < ApplicationController
   def index
-    expenses = Expense.includes(:category).order(created_at: :desc)
+    expenses = Expense.includes(:category).order(date: :desc, id: :desc)
 
     if params[:year].present? && params[:month].present?
       year = params[:year].to_i
