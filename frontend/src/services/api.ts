@@ -83,12 +83,22 @@ export async function updateExpense(
   id: number,
   data: Partial<ExpenseFormData>,
 ): Promise<Expense> {
+  const expenseData = { ...data } as any;
+
+  // Convert category string name into the matching category ID
+  if (data.category) {
+    const categories = await fetchCategories();
+    const category = categories.find((c) => c.name === data.category);
+    expenseData.category_id = category?.id;
+    delete expenseData.category;
+  }
+
   const response = await fetch(`${API_BASE_URL}/expenses/${id}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ expense: data }),
+    body: JSON.stringify({ expense: expenseData }),
   });
 
   if (!response.ok) {
@@ -109,4 +119,25 @@ export async function deleteExpense(id: number): Promise<void> {
   if (!response.ok) {
     throw new Error("Failed to delete expense");
   }
+}
+
+/**
+ * Create a new category
+ */
+export async function createCategory(name: string): Promise<{ id: number; name: string }> {
+  const response = await fetch(`${API_BASE_URL}/categories`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ category: { name } }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    const message = errorData.errors?.join(", ") || "Failed to create category";
+    throw new Error(message);
+  }
+
+  return response.json();
 }

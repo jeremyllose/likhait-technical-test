@@ -1,5 +1,6 @@
 class Api::ExpensesController < ApplicationController
   def index
+    # Sort by expense date descending, with ID descending as the fallback
     expenses = Expense.includes(:category).order(date: :desc, id: :desc)
 
     if params[:year].present? && params[:month].present?

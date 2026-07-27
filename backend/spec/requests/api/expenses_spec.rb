@@ -17,12 +17,15 @@ RSpec.describe "Api::Expenses", type: :request do
     end
 
     it "returns expenses in descending order by date, and then created_at" do
+      # Create helper expenses with different dates
       expense3 = Expense.create!(description: "Yesterday", amount: 10.00, category: food_category, date: Date.yesterday)
       expense4 = Expense.create!(description: "Tomorrow", amount: 20.00, category: food_category, date: Date.tomorrow)
 
       get "/api/expenses"
 
       json = JSON.parse(response.body)
+      # Assert the list is sorted by date DESC (tomorrow first, then today, then yesterday),
+      # and for expenses on the same day (expense2 and expense1), it uses ID DESC fallback.
       expect(json.map { |e| e["id"] }).to eq([expense4.id, expense2.id, expense1.id, expense3.id])
     end
   end
