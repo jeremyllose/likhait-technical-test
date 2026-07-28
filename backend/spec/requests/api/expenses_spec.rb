@@ -5,8 +5,8 @@ RSpec.describe "Api::Expenses", type: :request do
   let!(:transport_category) { Category.create!(name: "Transport") }
 
   describe "GET /api/expenses" do
-  let!(:expense1) { Expense.create!(description: "Lunch", amount: 100.00, category: food_category, date: Date.today) }
-  let!(:expense2) { Expense.create!(description: "Taxi", amount: 50.00, category: transport_category, date: Date.today) }
+  let!(:expense1) { Expense.create!(description: "Lunch", amount: 100.00, category: food_category, date: Date.current) }
+  let!(:expense2) { Expense.create!(description: "Taxi", amount: 50.00, category: transport_category, date: Date.current) }
 
     it "returns all expenses with category information" do
       get "/api/expenses"
@@ -18,15 +18,15 @@ RSpec.describe "Api::Expenses", type: :request do
 
     it "returns expenses in descending order by date, and then created_at" do
       # Create helper expenses with different dates
-      expense3 = Expense.create!(description: "Yesterday", amount: 10.00, category: food_category, date: Date.yesterday)
-      expense4 = Expense.create!(description: "Tomorrow", amount: 20.00, category: food_category, date: Date.tomorrow)
+      expense3 = Expense.create!(description: "Yesterday", amount: 10.00, category: food_category, date: Date.current - 1.day)
+      expense4 = Expense.create!(description: "Two days ago", amount: 20.00, category: food_category, date: Date.current - 2.days)
 
       get "/api/expenses"
 
       json = JSON.parse(response.body)
-      # Assert the list is sorted by date DESC (tomorrow first, then today, then yesterday),
+      # Assert the list is sorted by date DESC (today first, then yesterday, then two days ago),
       # and for expenses on the same day (expense2 and expense1), it uses ID DESC fallback.
-      expect(json.map { |e| e["id"] }).to eq([expense4.id, expense2.id, expense1.id, expense3.id])
+      expect(json.map { |e| e["id"] }).to eq([expense2.id, expense1.id, expense3.id, expense4.id])
     end
   end
 
@@ -38,7 +38,7 @@ RSpec.describe "Api::Expenses", type: :request do
             description: "Team Lunch",
             amount: 150.50,
             category_id: food_category.id,
-            date: Date.today
+            date: Date.current
           }
         }
       end
@@ -62,7 +62,7 @@ RSpec.describe "Api::Expenses", type: :request do
             description: "Invalid expense",
             amount: -100.00,
             category_id: food_category.id,
-            date: Date.today
+            date: Date.current
           }
         }
 
@@ -79,7 +79,7 @@ RSpec.describe "Api::Expenses", type: :request do
             description: "",
             amount: 100.00,
             category_id: food_category.id,
-            date: Date.today
+            date: Date.current
           }
         }
 
@@ -88,6 +88,25 @@ RSpec.describe "Api::Expenses", type: :request do
         }.to change(Expense, :count).by(1)
 
         expect(response).to have_http_status(:created)
+      end
+
+      it "with future dates" do
+        invalid_params = {
+          expense: {
+            description: "Future expense",
+            amount: 100.00,
+            category_id: food_category.id,
+            date: Date.current + 1.day
+          }
+        }
+
+        expect {
+          post "/api/expenses", params: invalid_params, as: :json
+        }.not_to change(Expense, :count)
+
+        expect(response).to have_http_status(:unprocessable_entity)
+        json = JSON.parse(response.body)
+        expect(json["errors"]).to include("Date cannot be in the future")
       end
     end
   end
