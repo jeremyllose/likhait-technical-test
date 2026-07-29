@@ -64,4 +64,4 @@ yarn-error.log*
 /backend/coverage/
 
 # RSpec
-/backend/.rspec_status
+/backend/.rspec_status/backend/vendor/bundle
