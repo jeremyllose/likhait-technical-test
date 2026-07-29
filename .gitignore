@@ -65,3 +65,6 @@ yarn-error.log*
 
 # RSpec
 /backend/.rspec_status
+
+# Vendor bundle
+/backend/vendor/bundle/
