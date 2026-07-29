@@ -116,51 +116,38 @@ expense_templates = {
 start_date = Date.new(2024, 1, 1)
 end_date = Date.new(2026, 2, 18)
 
-expense_count = 0
 current_date = start_date
 
+expenses_to_insert = []
 while current_date <= end_date
-  # Generate 3-8 expenses per day (random for variety)
   daily_expense_count = rand(3..8)
 
   daily_expense_count.times do
-    # Pick a random category
     category = created_categories.sample
-
-    # Get templates for this category
     templates = expense_templates[category.name]
 
     if templates
-      # Pick a random template
       template = templates.sample
-
-      # Generate random amount within the range
       amount = rand(template[:amount_range]).round(2)
-
-      # Add some decimal variation
       amount += rand(0..99) / 100.0
 
-      # Create the expense with created_at set to the date
-      Expense.create!(
+      expenses_to_insert << {
         description: template[:description],
         amount: amount,
-        category: category,
+        category_id: category.id,
         date: current_date,
         created_at: current_date,
         updated_at: current_date
-      )
-
-      expense_count += 1
-
-      # Print progress every 100 expenses
-      if expense_count % 100 == 0
-        puts "Created #{expense_count} expenses..."
-      end
+      }
     end
   end
 
-  # Move to next day
   current_date += 1.day
+end
+
+puts "Inserting #{expenses_to_insert.length} expenses..."
+expenses_to_insert.each_slice(1000) do |slice|
+  Expense.insert_all(slice)
 end
 
 puts "Seed data created successfully!"
