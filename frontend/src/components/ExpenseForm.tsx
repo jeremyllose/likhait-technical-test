@@ -2,17 +2,20 @@
  * Form component for adding/editing expenses
  */
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { ExpenseFormData } from "../types";
-import { EXPENSE_CATEGORIES } from "../constants/categories";
 import { TextField, SelectBox, Button } from "../vibes";
 import { useExpenseForm } from "../hooks/useExpenseForm";
+import { fetchCategories } from "../services/api";
+import { formatDate } from "../utils/expenseUtils";
 
 interface ExpenseFormProps {
   initialData?: Partial<ExpenseFormData>;
   onSubmit: (data: ExpenseFormData) => Promise<void>;
   onCancel?: () => void;
   submitLabel?: string;
+  categoriesList?: Array<{ id: number; name: string }>;
+  onAddCategoryClick?: () => void;
 }
 
 export function ExpenseForm({
@@ -20,12 +23,31 @@ export function ExpenseForm({
   onSubmit,
   onCancel,
   submitLabel = "Add Expense",
+  categoriesList,
+  onAddCategoryClick,
 }: ExpenseFormProps) {
   const { formData, errors, isSubmitting, handleChange, handleSubmit } =
     useExpenseForm({
       initialData,
       onSubmit,
     });
+
+  // Categories fetched locally if they are not passed down from parent
+  const [localCategories, setLocalCategories] = useState<Array<{ id: number; name: string }>>([]);
+
+  useEffect(() => {
+    if (!categoriesList) {
+      fetchCategories()
+        .then(setLocalCategories)
+        .catch((err) => console.error("Failed to fetch categories:", err));
+    }
+  }, [categoriesList]);
+
+  // Use parent-provided list if it has items, otherwise fall back to local database list
+  const displayCategories = (categoriesList && categoriesList.length > 0) ? categoriesList : localCategories;
+
+  // Filter out "Other" category since custom categories are supported
+  const filteredCategories = displayCategories.filter((cat) => cat.name !== "Other");
 
   const formStyle: React.CSSProperties = {
     display: "flex",
@@ -39,10 +61,12 @@ export function ExpenseForm({
     marginTop: "0.5rem",
   };
 
-  const categoryOptions = EXPENSE_CATEGORIES.map((category) => ({
-    value: category,
-    label: category,
+  const categoryOptions = filteredCategories.map((category) => ({
+    value: category.name,
+    label: category.name,
   }));
+
+  const todayStr = formatDate(new Date());
 
   return (
     <form onSubmit={handleSubmit} style={formStyle}>
@@ -69,15 +93,38 @@ export function ExpenseForm({
         required
       />
 
-      <SelectBox
-        label="Category"
-        options={categoryOptions}
-        value={formData.category}
-        onChange={(e) => handleChange("category", e.target.value)}
-        error={errors.category}
-        fullWidth
-        required
-      />
+      <div style={{ display: "flex", alignItems: "flex-end", gap: "8px" }}>
+        <div style={{ flex: 1 }}>
+          <SelectBox
+            label="Category"
+            options={categoryOptions}
+            value={formData.category}
+            onChange={(e) => handleChange("category", e.target.value)}
+            error={errors.category}
+            fullWidth
+            required
+          />
+        </div>
+        {onAddCategoryClick && (
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={onAddCategoryClick}
+            style={{
+              padding: "0 16px",
+              height: "42px",
+              marginBottom: errors.category ? "24px" : "0px",
+              fontSize: "1.2rem",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+            title="Add Custom Category"
+          >
+            +
+          </Button>
+        )}
+      </div>
 
       <TextField
         label="Date"
@@ -85,6 +132,7 @@ export function ExpenseForm({
         value={formData.date}
         onChange={(e) => handleChange("date", e.target.value)}
         error={errors.date}
+        max={todayStr}
         fullWidth
         required
       />
